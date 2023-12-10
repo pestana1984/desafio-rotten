@@ -1,0 +1,58 @@
+version: '3.8'
+
+networks:
+  desafio-rotten-net:
+    driver: bridge
+
+volumes:
+  desafio-rotten-data:
+
+services:
+  mongodb:
+    image: mongo:${tag}
+    ports:
+      - 27017:27017
+    networks: 
+     - desafio-rotten-net
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=mongoroot
+      - MONGO_INITDB_ROOT_PASSWORD=mongopass
+    container_name: mongodb
+
+  mongo-express:
+    image: pestana1984/mongo-express:${tag}
+    build:
+      context: ./mongo-express
+      dockerfile: ./Dockerfile
+    ports:
+      - 8081:8081
+    depends_on:
+    - mongodb
+    networks:
+      - desafio-rotten-net
+    volumes:
+      - desafio-rotten-data:/data/db
+    environment:
+      - ME_CONFIG_MONGODB_URL=mongodb://mongoroot:mongopass@mongodb:27017/?authMechanism=DEFAULT
+    container_name: mongo-express
+
+  rotten_potatoes:
+    image: pestana1984/rotten_potatoes:${tag}
+    build:
+      context: ./rotten-potatoes
+      dockerfile: ./Dockerfile
+    ports:
+      - 5000:5000
+    depends_on:
+    - mongodb
+    networks:
+      - desafio-rotten-net
+    volumes:
+      - desafio-rotten-data:/data/db
+    environment:
+      - MONGODB_DB = rotten
+      - MONGODB_HOST = mongodb
+      - MONGODB_PORT =27017
+      - MONGODB_USERNAME = mongoroot
+      - MONGODB_PASSWORD = mongopass
+    container_name: rotten_potatoes
